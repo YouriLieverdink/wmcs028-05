@@ -1,38 +1,37 @@
 import networkx as nx
-import pprint
 
-# The edges of the graph in question.
-edges = [
-  (1, 2), (1, 4), (2, 3), 
-  (2, 4), (3, 4), (4, 5), 
-  (5, 6), (6, 7), (6, 8), 
-  (6, 9)
-]
+from networkx.algorithms import bipartite
 
-def make_graph(edges):
-  G = nx.Graph()
-  G.add_edges_from(edges)
+# Buid a graph from the first [n] edges defined at [path].
+def make(path, n):
+    file = open(path, 'r')
+    graph = nx.Graph()
 
-  return G
+    for x in range(0, n):
+        line = file.readline().split()
+        if not line:
+            break
+
+        # Split the line into the available columns 
+        user, page, weight, timestamp = line
+        graph.add_edge(
+            f"u{user}", 
+            f"p{page}", 
+            weight=weight, 
+            timestamp=timestamp
+        )
+
+    file.close()
+
+    return graph
+
 
 def main():
-  graph = make_graph(edges)
+    graph = make('./assets/edges.txt', 100_000_000)
 
-  dc = nx.centrality.degree_centrality(graph)
-  print('\nDegree Centrality:')
-  pprint.pprint(dc)
+    print(nx.number_of_nodes(graph))
+    print(nx.number_of_edges(graph))
 
-  cc = nx.centrality.closeness_centrality(graph)
-  print('\nCloseness Centrality:')
-  pprint.pprint(cc)
-
-  bc = nx.centrality.betweenness_centrality(graph)
-  print('\nBetweenness Centrality:')
-  pprint.pprint(bc)
-
-  ec = nx.centrality.eigenvector_centrality(graph)
-  print('\nEigenvector Centrality:')
-  pprint.pprint(ec)
 
 if __name__ == '__main__':
-  main()
+    main()
