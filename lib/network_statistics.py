@@ -44,3 +44,20 @@ def degree_distribution(G: nx.Graph) -> None:
     plt.tight_layout(pad=2.0)
     plt.show()
 
+"""
+Create plot to display the different clusters.
+"""
+def clusters(G: nx.Graph) -> None:
+    pass
+
+"""
+Compute the average clustering coefficient of the network.
+"""
+def avg_clustering_coefficient(G: nx.Graph) -> float:
+    pass
+
+"""
+Compute the clustering coefficient of all individual nodes.
+"""
+def clustering_coefficient(G: nx.Graph) -> float:
+    pass
