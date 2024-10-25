@@ -15,10 +15,9 @@ def cliques(G: nx.Graph) -> None:
     largest_max_clique = max(len(c) for c in max_cliques)
     print(f"Largest maximal clique has size {largest_max_clique}")
 
-    largest_cliques = [c for c in max_cliques if len(c) == largest_max_clique]
-
     # plot
 
+    largest_cliques = [c for c in max_cliques if len(c) == largest_max_clique]
     # create figure
     plt.figure(figsize=(12, 8))
     pos = nx.spring_layout(G, seed=42)
@@ -44,7 +43,7 @@ def homophily(G: nx.Graph) -> float:
 """
 Create plot to display the bridges.
 """
-def bridges(G: nx.Graph) -> float:
+def bridges(G: nx.Graph) -> None:
     # G needs to be a projection
     bridges = list(nx.bridges(G))
     n_bridges = len(bridges)
@@ -83,7 +82,7 @@ def partitioning(G: nx.Graph) -> None:
     for communities in itertools.islice(component, k):
         print(tuple(sorted(c) for c in communities))
 
-    
+
 
 
     pass

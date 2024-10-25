@@ -24,28 +24,26 @@ def number_of_unique_edges(G: nx.Graph) -> int:
     for endpoint1, endpoint2, data in G.edges(data=True):
         edge = (endpoint1, endpoint2)
         unique_edges.add(edge)
-    print(f"unique_edges = {len(unique_edges)}")
     return len(unique_edges)
 
 """
 The number of nodes that are pages
 """
 def number_of_pages(G: nx.Graph) -> int:
-    pages = {n for n, d in G.nodes(data=True) if d.get('subset') == 'page'}
+    pages = {node for node, attr in G.nodes(data=True) if attr.get('subset') == 'page'}
     return len(pages)
 
 """
 The number of nodes that are users
 """
 def number_of_users(G: nx.Graph) -> int:
-    users = {n for n, d in G.nodes(data=True) if d.get('subset') == 'user'}
+    users = {node for node, attr in G.nodes(data=True) if attr.get('subset') == 'user'}
     return len(users)
 
 """
 The density of the graph.
 """
 def density(G: nx.Graph) -> float:
-    print(f"uniques/ pages {number_of_pages(G)}* users {number_of_users(G)}")
     return number_of_unique_edges(G)/(number_of_pages(G) * number_of_users(G))
 
 """
