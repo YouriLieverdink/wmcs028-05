@@ -1,47 +1,15 @@
-import networkx as nx
-import numpy as np
-
-import matplotlib.pyplot as plt
-import matplotlib as mpl
-
-# Buid a graph from the first [n] edges defined at [path].
-def make(path, n):
-    file = open(path, 'r')
-    G = nx.Graph()
-
-    for x in range(0, n):
-        line = file.readline().split()
-        if not line:
-            break
-
-        # Split the line into the available columns 
-        user, page, weight, timestamp = line
-
-        G.add_node(f'u{user}', subset="user")
-        G.add_node(f'p{page}', subset="page")
-        G.add_edge(f'u{user}', f'p{page}', weight=weight, timestamp=timestamp)
-
-    file.close()
-
-    return G
+from lib.utilities import make_graph, largest_cc
+from lib.network_statistics import number_of_nodes, number_of_edges, degree_distribution
 
 def main():
-    G = make('./assets/edges.txt', 500)
+    G = make_graph('./assets/edges.txt', 1_000_000)
+    print('[INFO] Graph created.')
 
-    # G.remove_nodes_from(list(nx.isolates(G)))
-    largest_cc = max(nx.connected_components(G), key=len)
-
-    sG = G.subgraph(largest_cc)
-
-    top = nx.bipartite.sets(sG)[0]
-    pos = nx.bipartite_layout(sG, top)
-
-    options = {
-        "node_size": 5,
-    }
-
-    nx.draw(sG, pos, **options)
-    plt.show()
+    sG = largest_cc(G)
+    print('[INFO] Subgraph of largest connected component created.')
+        
+    degree_distribution(sG)
+    print('[INFO] Degree distribution displayed.')
 
 if __name__ == '__main__':
     main()
