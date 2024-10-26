@@ -1,6 +1,7 @@
 import networkx as nx
 import matplotlib.pyplot as plt
 import itertools
+import random
 
 
 """
@@ -19,16 +20,20 @@ def cliques(G: nx.Graph) -> None:
 
     largest_cliques = [c for c in max_cliques if len(c) == largest_max_clique]
     # create figure
+    sampled_cliques = random.sample(largest_cliques, min(len(largest_cliques), 10)) # 10 is how many you display
+
+    # plot each sampled clique as a separate subgraph for better readability
     plt.figure(figsize=(12, 8))
-    pos = nx.spring_layout(G, seed=42)
-    nx.draw_networkx(G, pos, node_size=10, edge_color="gray", alpha=0.5, with_labels=False)
+    pos = nx.spring_layout(G, seed=42, k=0.15)  # Adjust k for better spacing in large graphs
+    nx.draw_networkx(G, pos, node_size=5, edge_color="lightgray", alpha=0.3, with_labels=False)
 
-    # highlight nodes and edges in the largest maximal cliques
-    for clique in largest_cliques:
-        nx.draw_networkx_nodes(G, pos, nodelist=clique, node_color="blue", node_size=50)
-        nx.draw_networkx_edges(G, pos, edgelist=[(clique[i], clique[j]) for i in range(len(clique)) for j in range(i + 1, len(clique))], edge_color="blue")
+    # highlight nodes and edges in the sampled largest maximal cliques
+    for i, clique in enumerate(sampled_cliques):
+        clique_subgraph = G.subgraph(clique)
+        nx.draw_networkx_nodes(clique_subgraph, pos, node_color="blue", node_size=50, alpha=0.8)
+        nx.draw_networkx_edges(clique_subgraph, pos, edge_color="blue", width=2, alpha=0.6)
 
-    plt.title(f"Largest Maximal Cliques (size: {largest_max_clique})")
+    plt.title(f"Sampled Largest Maximal Cliques (size: {largest_max_clique})")
     plt.savefig("cliques.png")
     plt.show()
 
@@ -66,6 +71,7 @@ def bridges(G: nx.Graph) -> None:
     nx.draw_networkx_nodes(sub_network, pos, node_size=50, node_color='lightblue')
     nx.draw_networkx_edges(sub_network, pos, edge_color='gray', alpha=0.5)
     nx.draw_networkx_edges(sub_network, pos, edgelist=bridges, edge_color='blue', width=2)  # bridges different color
+    nx.draw_networkx_labels(sub_network, pos, font_size=10, font_color='black')
 
     plt.title(f"Bridges in the Network (Sampled Subgraph)")
     plt.axis('off')
