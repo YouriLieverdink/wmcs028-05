@@ -52,26 +52,37 @@ Build graphs for displaying the degree distribution.
 def degree_distribution(G: nx.Graph) -> None:
     top, bottom = nx.bipartite.sets(G)
 
-    top_degrees = [G.degree(n) for n in top]
-    bottom_degrees = [G.degree(n) for n in bottom]
+    top_degrees = [d for n, d in G.degree(top)]
+    top_degree_sequence = np.array(sorted(top_degrees, reverse=True))
 
-    # TODO: Youri is working on this one
+    bottom_degrees = [d for n, d in G.degree(bottom)]
+    bottom_degree_sequence = np.array(sorted(bottom_degrees, reverse=True))
+
+    top_bins = np.logspace(np.log10(top_degree_sequence.min()), np.log10(top_degree_sequence.max()), 100)
+    top_hist, top_bin_edges = np.histogram(top_degree_sequence, bins=top_bins)
+
+    bottom_bins = np.logspace(np.log10(bottom_degree_sequence.min()), np.log10(bottom_degree_sequence.max()), 100)
+    bottom_hist, bottom_bin_edges = np.histogram(bottom_degree_sequence, bins=bottom_bins)
 
     plt.figure(figsize=(10, 5))
 
     plt.subplot(1, 2, 1)
-    plt.bar
+    plt.bar(top_bin_edges[:-1], top_hist, width=np.diff(top_bin_edges), edgecolor="black", align="edge")
+    plt.xscale('log')
+    plt.yscale('log')
     plt.title('Degree distribution (users)')
     plt.xlabel('Degree')
-    plt.ylabel('Frequency')
+    plt.ylabel('# of Nodes')
 
     plt.subplot(1, 2, 2)
-    plt.bar(bottom_degrees_x, bottom_degrees_y, color='green', alpha=0.7)
+    plt.bar(bottom_bin_edges[:-1], bottom_hist, width=np.diff(bottom_bin_edges), edgecolor="black", align="edge")
+    plt.xscale('log')
+    plt.yscale('log')
     plt.title('Degree distribution (pages)')
     plt.xlabel('Degree')
-    plt.ylabel('Frequency')
+    plt.ylabel('# of Nodes')
 
-    plt.tight_layout(pad=2.0)
+    plt.savefig("degree_distribution.png")
     plt.show()
 
 """
