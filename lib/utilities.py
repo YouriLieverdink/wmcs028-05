@@ -1,5 +1,6 @@
 import networkx as nx
 import pickle
+import csv
 
 """
 Make a graph from the edges at [path] with the first [n] edges.
@@ -41,8 +42,23 @@ def load_graph(path: str) -> nx.Graph:
     with open(path, 'rb') as file:
         G = pickle.load(file)
         file.close()
-        
+
     return G
+
+"""
+Convert a (sub) graph [G] to a csv file
+"""
+def convert_to_csv(G: nx.Graph, output_path: str) -> None:
+    with open(output_path, mode='w', newline='') as file:
+        writer = csv.writer(file)
+        # write header
+        writer.writerow(['Source', 'Target'])
+
+        # write all edges to the new CSV file
+        for endpoint1, endpoint2, data in G.edges(data=True):
+            writer.writerow([endpoint1, endpoint2])
+
+    print(f"Graph data saved to CSV file: {output_path}")
 
 """
 Determine the largest connected component of graph [G] and return it.

@@ -2,59 +2,70 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import itertools
 import random
+import csv
+import pandas as pd
+
 
 
 """
 Create plot to display the different cliques, also print the number of maximal cliques.
 """
-def cliques(G: nx.Graph) -> None:
-    # G needs to be a projection
+def cliques(G: nx.Graph) -> nx.Graph:
+    # find the maximal cliques in the graph
     max_cliques = list(nx.find_cliques(G))
     n_max_cliques = len(max_cliques)
-    print(f"Number of max_cliques = {n_max_cliques}")
+    print(f"[RESULT] Number of max_cliques = {n_max_cliques}")
 
     largest_max_clique = max(len(c) for c in max_cliques)
-    print(f"Largest maximal clique has size {largest_max_clique}")
+    print(f"[RESULT] Largest maximal clique has size {largest_max_clique}")
 
-    # plot
-
+    # show only 10 of those largest cliques
     largest_cliques = [c for c in max_cliques if len(c) == largest_max_clique]
-    # create figure
-    sampled_cliques = random.sample(largest_cliques, min(len(largest_cliques), 10)) # 10 is how many you display
+    # sampled_cliques = random.sample(largest_cliques, min(len(largest_cliques), 10))
 
-    # plot each sampled clique as a separate subgraph for better readability
-    plt.figure(figsize=(12, 8))
-    pos = nx.spring_layout(G, seed=42, k=0.15)  # Adjust k for better spacing in large graphs
-    nx.draw_networkx(G, pos, node_size=5, edge_color="lightgray", alpha=0.3, with_labels=False)
+    # create a metagraph for visualization
+    metagraph = nx.Graph()
 
-    # highlight nodes and edges in the sampled largest maximal cliques
-    for i, clique in enumerate(sampled_cliques):
-        clique_subgraph = G.subgraph(clique)
-        nx.draw_networkx_nodes(clique_subgraph, pos, node_color="blue", node_size=50, alpha=0.8)
-        nx.draw_networkx_edges(clique_subgraph, pos, edge_color="blue", width=2, alpha=0.6)
+    # add each sampled clique as a separate node
+    for i, clique in enumerate(largest_cliques):
+        metagraph.add_node(i, members=clique)  # node i represents a clique
 
-    plt.title(f"Sampled Largest Maximal Cliques (size: {largest_max_clique})")
-    plt.savefig("cliques.png")
+    # add edges between clique-nodes if cliques share any nodes in the original graph
+    for i in range(len(largest_cliques)):
+        for j in range(i + 1, len(largest_cliques)):
+            if set(largest_cliques[i]).intersection(largest_cliques[j]):
+                metagraph.add_edge(i, j)
+
+    colors = plt.cm.get_cmap('tab10', len(largest_cliques))
+
+    # plot the metagraph
+    plt.figure(figsize=(8, 6))
+    metagraph_pos = nx.spring_layout(metagraph, seed=42)
+
+    node_colors = [colors(i) for i in range(len(largest_cliques))]
+    nx.draw_networkx_nodes(metagraph, metagraph_pos, node_size=500, node_color=node_colors, edgecolors="black")
+    nx.draw_networkx_edges(metagraph, metagraph_pos, width=2, edge_color="gray", alpha=0.7)
+
+    # Label each node by clique number (optional)
+    # labels = {i: f"Clique {i+1}" for i in range(len(sampled_cliques))}
+    # nx.draw_networkx_labels(metagraph, metagraph_pos, labels, font_size=10, font_color="black")
+
+    plt.title("Metagraph of Sampled Cliques")
+    plt.savefig("metagraph_cliques.png")
     plt.show()
 
 
+    return largest_cliques
+
 
 """
-Perform homophily analysis.
+Find bridges, save corresponding nodes to file and return subgraph [sG].
 """
-def homophily(G: nx.Graph) -> float:
-    pass
-
-"""
-Create plot to display the bridges.
-"""
-def bridges(G: nx.Graph) -> None:
+def bridges(G: nx.Graph, output_path: str) -> nx.Graph:
     # G needs to be a projection
     bridges = list(nx.bridges(G))
     n_bridges = len(bridges)
-    print(f"Number of bridges = {n_bridges}")
-
-    # plot
+    print(f"[RESULT] Number of bridges = {n_bridges}")
 
     # create the subgraph
     bridge_nodes = set()
@@ -63,32 +74,67 @@ def bridges(G: nx.Graph) -> None:
         bridge_nodes.add(endpoint2)
 
     smaller_G = set(bridge_nodes)  # create sub network
-    sub_network = G.subgraph(smaller_G)
-    pos = nx.spring_layout(sub_network, seed=42)
+    sG = G.subgraph(smaller_G)
 
-    # create figure
-    plt.figure(figsize=(12, 8))
-    nx.draw_networkx_nodes(sub_network, pos, node_size=50, node_color='lightblue')
-    nx.draw_networkx_edges(sub_network, pos, edge_color='gray', alpha=0.5)
-    nx.draw_networkx_edges(sub_network, pos, edgelist=bridges, edge_color='blue', width=2)  # bridges different color
-    nx.draw_networkx_labels(sub_network, pos, font_size=10, font_color='black')
+    # save important nodes to a CSV file (ordered)
+    node_degrees = [(node, degree) for node, degree in sG.degree()]
+    sorted_nodes_by_degree = sorted(node_degrees, key=lambda x: x[1], reverse=True)
+    with open(output_path, mode='w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(["node_id", "degree"])
+        for node, degree in sorted_nodes_by_degree:
+            writer.writerow([node, degree])
 
-    plt.title(f"Bridges in the Network (Sampled Subgraph)")
-    plt.axis('off')
-    plt.savefig("bridges.png")
-    plt.show()
+    print(f"Most influential nodes written to {output_path}")
+    return sG
 
 """
 Apply Girvan-Newman algorithm.
 """
-def partitioning(G: nx.Graph) -> None:
-    # G needs to be a projection
-    k = 10  # adjust to divide into more/less components
-    components = nx.community.girvan_newman(G)
-    for communities in itertools.islice(component, k):
-        print(tuple(sorted(c) for c in communities))
-
-
-
-
+def partitioning(G: nx.Graph, output_path: str) -> None:
     pass
+#     # G needs to be a projection
+#     k = 10
+#     components = nx.community.girvan_newman(G)
+#
+#     community_list = []
+#
+#     for i, communities in enumerate(itertools.islice(components, k)):
+#         sorted_communities = sorted(tuple(sorted(c)) for c in communities)
+#         community_list.append(sorted_communities)
+#         print(f"Community {i+1}: {sorted_communities}")
+#
+#     # flatten the community list to save it to CSV file
+#     flat_communities = []
+#     for i, community in enumerate(community_list):
+#         for c in community:
+#             flat_communities.append({"Community": f"Community {i+1}", "Nodes": ', '.join(map(str, c))})
+#
+#     # Use pandas to save to CSV
+#     df = pd.DataFrame(flat_communities)
+#     df.to_csv(output_csv, index=False)
+#     print(f"Communities saved to {output_csv}")
+#
+#     # visualization
+#     plt.figure(figsize=(12, 8))
+#     pos = nx.spring_layout(G, seed=42)
+#     color_map = plt.cm.get_cmap('tab10', k)
+#
+#     # a different color for each community
+#     for i, communities in enumerate(community_list):
+#         for community in communities:
+#             nx.draw_networkx_nodes(G, pos, nodelist=community, node_color=color_map(i), label=f'Community {i+1}', node_size=100)
+#
+#     nx.draw_networkx_edges(G, pos, alpha=0.5)
+#
+#     # labels/titles
+#     plt.title("Girvan-Newman Community Detection")
+#     plt.legend()
+#     plt.savefig("girvan_newman_communities.png")
+#     plt.show()
+#
+# # Example usage
+# # G = nx.erdos_renyi_graph(100, 0.05)  # Example graph
+# # partitioning(G)
+#
+#     return
