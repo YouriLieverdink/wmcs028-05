@@ -60,13 +60,6 @@ def convert_to_csv(G: nx.Graph, output_path: str) -> None:
 
     print(f"Graph data saved to CSV file: {output_path}")
 
-"""
-Determine the largest connected component of graph [G] and return it.
-"""
-def largest_cc(G: nx.Graph) -> nx.Graph:
-    largest_cc = max(nx.connected_components(G), key=len)
-
-    return G.subgraph(largest_cc)
 
 """
 Create and return the user projection of graph [G].

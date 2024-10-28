@@ -1,7 +1,9 @@
 import networkx as nx
 import matplotlib.pyplot as plt
 import numpy as np
-
+import pandas as pd
+import csv
+import random
 from collections import Counter
 
 """
@@ -50,14 +52,51 @@ def density(G: nx.Graph) -> float:
 Build graphs for displaying the degree distribution.
 """
 def degree_distribution(G: nx.Graph) -> None:
-    top, bottom = nx.bipartite.sets(G)
+    # create to sets (fby iterating through each component)
+    if nx.is_connected(G):
+        top, bottom = nx.bipartite.sets(G)
+    else:
+        components = list(nx.connected_components(G))
+        top, bottom = set(), set()
 
-    top_degrees = [d for n, d in G.degree(top)]
-    top_degree_sequence = np.array(sorted(top_degrees, reverse=True))
+        for component in components:
+            sG = G.subgraph(component)
+            if nx.is_bipartite(sG):
+                top_set, bottom_set = nx.bipartite.sets(sG)
+                top.update(top_set)
+                bottom.update(bottom_set)
+            else:
+                print("Component is not bipartite:", component)
 
-    bottom_degrees = [d for n, d in G.degree(bottom)]
-    bottom_degree_sequence = np.array(sorted(bottom_degrees, reverse=True))
+    # get the degree of all users and store both user id and degree
+    top_degrees = [(n, d) for n, d in G.degree(top)]
+    top_degree_sequence = sorted(top_degrees, key=lambda x: x[1], reverse=True)
 
+    # extract the node with the maximum degree
+    max_degree_node, max_degree = top_degree_sequence[0]
+    min_degree_node, min_degree = top_degree_sequence[-1]
+    average_degree = np.average([d for _, d in top_degree_sequence])
+
+    print(f"[RESULT] Maximum degree of users = {max_degree}, user = {max_degree_node}")
+    print(f"[RESULT] Minimum degree of users = {min_degree}")
+    print(f"[RESULT] Average degree of users = {average_degree}")
+
+    # get the degree of all pages and store both page id and degree
+    bottom_degrees = [(n, d) for n, d in G.degree(bottom)]
+    bottom_degree_sequence = sorted(bottom_degrees, key=lambda x: x[1], reverse=True)
+
+    # extract the node with the maximum degree
+    max_degree_node, max_degree = bottom_degree_sequence[0]
+    min_degree_node, min_degree = bottom_degree_sequence[-1]
+    average_degree = np.average([d for _, d in bottom_degree_sequence])
+
+    print(f"[RESULT] Maximum degree of pages = {max_degree}, user = {max_degree_node}")
+    print(f"[RESULT] Minimum degree of pages = {min_degree}")
+    print(f"[RESULT] Average degree of pages = {average_degree}")
+
+    # plot
+    top_degree_sequence = np.array([d for _, d in top_degree_sequence])
+    bottom_degree_sequence = np.array([d for _, d in bottom_degree_sequence])
     top_bins = np.logspace(np.log10(top_degree_sequence.min()), np.log10(top_degree_sequence.max()), 100)
     top_hist, top_bin_edges = np.histogram(top_degree_sequence, bins=top_bins)
 
@@ -102,3 +141,100 @@ Compute the clustering coefficient of all individual nodes.
 """
 def clustering_coefficient(G: nx.Graph) -> float:
     pass
+
+"""
+Determine the number of connected components of graph [G], and return a
+sub graph [sG] with sampled connected components for visualization.
+"""
+def connected_components(G: nx.Graph, output_path: str) -> nx.Graph:
+    # sort the connected components and get sizes
+    connected_components = sorted(nx.connected_components(G), key=len)
+    component_sizes = [len(component) for component in connected_components]
+
+    # count how often each component size occurs
+    size_counts = Counter(component_sizes)
+
+    # save size counts to a CSV
+    size_counts_df = pd.DataFrame(size_counts.items(), columns=["Component Size", "Count"])
+    size_counts_df = size_counts_df.sort_values(by="Component Size", ascending=False)
+    size_counts_df.to_csv(output_path, index=False)
+
+    print(f"[RESULT] Component size counts saved to {output_path}")
+
+    # identify the largest component
+    largest_component = list(connected_components[-1])
+    largest_component_graph = G.subgraph(largest_component)
+    largest_component_graph = nx.Graph(largest_component_graph) # disregard multiple edges between same 2 nodes
+
+    # sample connected nodes from the largest component
+    start_node = random.choice(list(largest_component_graph.nodes()))
+    sampled_nodes = set()
+
+    # bfs to find connected nodes
+    queue = [start_node]
+    visited = set()
+    while queue and len(sampled_nodes) < 80:
+        current = queue.pop(0)
+        if current not in visited:
+            visited.add(current)
+            sampled_nodes.add(current)
+            queue.extend(set(largest_component_graph.neighbors(current)) - visited)  # Add unvisited neighbors
+
+    # sample 10 smaller components
+    small_components = connected_components[:-1]
+    num_small_samples = 10
+    selected_small_components = random.sample(small_components, min(num_small_samples, len(small_components)))
+
+    for component in selected_small_components:
+        sampled_nodes.update(component)
+
+    # create the subgraph with the sampled nodes
+    sG = G.subgraph(sampled_nodes).copy()
+
+    print(f"[INFO] Number of nodes in sG = {len(sG.nodes())}, edges: {sG.number_of_edges()}")
+    print(f"[INFO] Total number of sampled connected nodes from largest and small components = {len(sampled_nodes)}")
+
+    return sG
+
+
+"""
+Determine the largest connected component of graph [G] and return it.
+"""
+def largest_cc(G: nx.Graph) -> nx.Graph:
+    largest_cc = max(nx.connected_components(G), key=len)
+
+    return G.subgraph(largest_cc)
+
+"""
+Compute the betweenness centrality
+"""
+def betweenness_centrality(G: nx.Graph, output_path: str) -> None:
+    if nx.is_connected(G):
+        top, bottom = nx.bipartite.sets(G)
+    else:
+        components = list(nx.connected_components(G))
+        top, bottom = set(), set()
+
+        for component in components:
+            sG = G.subgraph(component)
+            if nx.is_bipartite(sG):
+                top_set, bottom_set = nx.bipartite.sets(sG)
+                top.update(top_set)
+                bottom.update(bottom_set)
+            else:
+                print("Component is not bipartite:", component)
+
+    # compute betweenness centrality for both sets
+    top_betweenness = nx.bipartite.betweenness_centrality(G, nodes=top)
+    bottom_betweenness = nx.bipartite.betweenness_centrality(G, nodes=bottom)
+
+    # take top 100 with highest centrality
+    top_centrality_list = sorted(top_betweenness.items(), key=lambda item: item[1], reverse=True)[:100]
+    bottom_centrality_list = sorted(bottom_betweenness.items(), key=lambda item: item[1], reverse=True)[:100]
+
+    # save to CSV
+    top_df = pd.DataFrame(top_centrality_list, columns=['User', 'Betweenness Centrality'])
+    bottom_df = pd.DataFrame(bottom_centrality_list, columns=['Page', 'Betweenness Centrality'])
+
+    top_df.to_csv(f"{output_path}/user_betweenness_centrality.csv", index=False)
+    bottom_df.to_csv(f"{output_path}/page_betweenness_centrality.csv", index=False)
