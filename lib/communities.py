@@ -52,7 +52,7 @@ def cliques(G: nx.Graph) -> nx.Graph:
 
     plt.title("Metagraph of Sampled Cliques")
     plt.savefig("metagraph_cliques.png")
-    plt.show()
+    # plt.show()
 
 
     return largest_cliques
