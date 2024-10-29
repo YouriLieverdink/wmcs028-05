@@ -8,9 +8,8 @@ def main():
     G = load_graph(GRAPH_PATH)
     print('[INFO]: Graph loaded.')
 
-    degree_centrality(G, DEGREE_CENTRALITY_PATH, 20)
-    plot_degree_centrality('./results/page_degree_centrality.csv',
-    './results/user_degree_centrality.csv')
+    sG = dcentrality_subnetwork(G)
+    convert_to_csv(sG,DCENTRALITY_SG_CSV_PATH)
 
 
 

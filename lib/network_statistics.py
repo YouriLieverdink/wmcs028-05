@@ -267,6 +267,38 @@ def plot_degree_centrality(page_csv: str, user_csv: str) -> None:
     plt.show()
 
 """
+Create a subgraph [sG] containing the 25 users and pages with highest degree centrality
+"""
+def dcentrality_subnetwork(G: nx.Graph) -> nx.Graph:
+    if nx.is_connected(G):
+        top, bottom = nx.bipartite.sets(G)
+    else:
+        components = list(nx.connected_components(G))
+        top, bottom = set(), set()
+
+        for component in components:
+            sG = G.subgraph(component)
+            if nx.is_bipartite(sG):
+                top_set, bottom_set = nx.bipartite.sets(sG)
+                top.update(top_set)
+                bottom.update(bottom_set)
+            else:
+                print("Component is not bipartite:", component)
+
+    # compute degree centrality and select the upper 25 nodes from the sets
+    top_degrees = [(n, d) for n, d in G.degree(top)]
+    bottom_degrees = [(n, d) for n, d in G.degree(bottom)]
+    top_25_nodes = [node for node, _ in sorted(top_degrees, key=lambda x: x[1], reverse=True)[:25]]
+    bottom_25_nodes = [node for node, _ in sorted(bottom_degrees, key=lambda x: x[1], reverse=True)[:25]]
+
+    # create the subgraph
+    top_nodes = top_25_nodes + bottom_25_nodes
+    print(f"[INFO] Number of nodes = {len(top_nodes)}")
+    sG = G.subgraph(top_nodes).copy()
+
+    return sG
+
+"""
 Compute the betweenness centrality
 """
 def betweenness_centrality(G: nx.Graph, output_path: str) -> None:
