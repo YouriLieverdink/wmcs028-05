@@ -8,7 +8,9 @@ def main():
     G = load_graph(GRAPH_PATH)
     print('[INFO]: Graph loaded.')
 
-    betweenness_centrality(G, BETWEENNESS_CENTRALITY_PATH)
+    degree_centrality(G, DEGREE_CENTRALITY_PATH, 20)
+    plot_degree_centrality('./results/page_degree_centrality.csv',
+    './results/user_degree_centrality.csv')
 
 
 

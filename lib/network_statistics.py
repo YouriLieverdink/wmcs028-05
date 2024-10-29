@@ -52,7 +52,7 @@ def density(G: nx.Graph) -> float:
 Build graphs for displaying the degree distribution.
 """
 def degree_distribution(G: nx.Graph) -> None:
-    # create to sets (fby iterating through each component)
+    # create two sets (by iterating through each component)
     if nx.is_connected(G):
         top, bottom = nx.bipartite.sets(G)
     else:
@@ -204,6 +204,67 @@ def largest_cc(G: nx.Graph) -> nx.Graph:
     largest_cc = max(nx.connected_components(G), key=len)
 
     return G.subgraph(largest_cc)
+
+"""
+Compute the degree centrality for each node in [G] and save top to k csv file.
+"""
+def degree_centrality(G: nx.Graph, output_path: str, k: int) -> None:
+    # create two sets (by iterating through each component)
+    if nx.is_connected(G):
+        top, bottom = nx.bipartite.sets(G)
+    else:
+        components = list(nx.connected_components(G))
+        top, bottom = set(), set()
+
+        for component in components:
+            sG = G.subgraph(component)
+            if nx.is_bipartite(sG):
+                top_set, bottom_set = nx.bipartite.sets(sG)
+                top.update(top_set)
+                bottom.update(bottom_set)
+            else:
+                print("Component is not bipartite:", component)
+
+    # get the degree centrality for both sets and find the k highest
+    top_degrees = [(n, d) for n, d in G.degree(top)]
+    bottom_degrees = [(n, d) for n, d in G.degree(bottom)]
+    top_degree_sequence = sorted(top_degrees, key=lambda x: x[1], reverse=True)[:k]
+    bottom_degree_sequence = sorted(bottom_degrees, key=lambda x: x[1], reverse=True)[:k]
+
+    # save top k to a CSV file
+    top_df = pd.DataFrame(top_degree_sequence, columns=['Node', 'Degree'])
+    bottom_df = pd.DataFrame(bottom_degree_sequence, columns=['Node', 'Degree'])
+    top_df.to_csv(f"{output_path}/user_degree_centrality.csv", index=False)
+    bottom_df.to_csv(f"{output_path}/page_degree_centrality.csv", index=False)
+
+"""
+Plot bar charts of the users and pages with the highest degree centrality
+"""
+def plot_degree_centrality(page_csv: str, user_csv: str) -> None:
+    page_df = pd.read_csv(page_csv)
+    user_df = pd.read_csv(user_csv)
+
+    # plot top page centrality degrees
+    plt.figure(figsize=(12, 6))
+    plt.subplot(1, 2, 1)
+    plt.bar(page_df['Node'], page_df['Degree'], color='blue')
+    plt.xticks(rotation=90)
+    plt.xlabel('Page Nodes')
+    plt.ylabel('Degree Centrality')
+    plt.title('Top 10 Degree Centrality of Pages')
+
+    # plot top user centrality degrees
+    plt.subplot(1, 2, 2)
+    plt.bar(user_df['Node'], user_df['Degree'], color='purple')
+    plt.xticks(rotation=90)
+    plt.xlabel('User Nodes')
+    plt.ylabel('Degree Centrality')
+    plt.title('Top 10 Degree Centrality of Users')
+
+    # show and save
+    plt.tight_layout()
+    plt.savefig("top_degree_centralities")
+    plt.show()
 
 """
 Compute the betweenness centrality
