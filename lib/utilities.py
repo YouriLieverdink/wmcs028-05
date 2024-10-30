@@ -80,3 +80,17 @@ def create_page_projection(G: nx.Graph) -> nx.Graph:
 
     pages = [node for node, attr in G.nodes(data=True) if attr.get('subset') == "page"]
     return nx.bipartite.projected_graph(sG, pages)
+
+"""
+Create a subgraph of [G] with edges between [start] and [end].
+"""
+def subgraph_by_range(G: nx.Graph, start: int, end: int) -> nx.Graph:
+    subgraph = nx.MultiGraph()
+
+    for u, v, data in G.edges(data=True):
+        if start <= int(data['timestamp']) <= end:
+            subgraph.add_node(u, subset="user")
+            subgraph.add_node(v, subset="page")
+            subgraph.add_edge(u, v, weight=data['weight'], timestamp=data['timestamp'])
+
+    return subgraph

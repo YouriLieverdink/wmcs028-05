@@ -5,8 +5,6 @@ import pandas as pd
 import csv
 import random
 from collections import Counter
-from lib.utilities import convert_to_csv
-from datetime import datetime
 
 """
 The number of nodes in the graph.
@@ -136,13 +134,13 @@ def clusters(G: nx.Graph) -> None:
 Compute the average clustering coefficient of the network.
 """
 def avg_clustering_coefficient(G: nx.Graph) -> float:
-    pass
+    return nx.bipartite.average_clustering(G)
 
 """
 Compute the clustering coefficient of all individual nodes.
 """
 def clustering_coefficient(G: nx.Graph) -> float:
-    pass
+    return nx.bipartite.clustering(G)
 
 """
 Determine the number of connected components of graph [G], and return a

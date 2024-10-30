@@ -4,7 +4,7 @@ import itertools
 import random
 import csv
 import pandas as pd
-
+from tqdm import tqdm
 
 
 """
@@ -57,6 +57,44 @@ def cliques(G: nx.Graph) -> nx.Graph:
 
     return largest_cliques
 
+def cliques_2o(G: nx.Graph) -> None:
+    # Find the cliques
+    pages = [n for n in G.nodes if n.startswith('p')]
+    users = set(G.nodes) - set(pages)
+
+    # Dictionary to store the cliques
+    cliques = {}
+
+    # Iterate over all pages
+    for page in tqdm(pages):
+        # Get all users that edited this page
+        users_for_page = list(G.neighbors(page))
+        
+        if len(users_for_page) > 1:  # At least two users are needed to form a clique
+            cliques[page] = users_for_page
+
+    largest_cliques = sorted(cliques.items(), key=lambda item: len(item[1]), reverse=True)[:10]
+
+    # Plotting the bipartite graph
+    plt.figure(figsize=(12, 8))
+    
+    pos = nx.bipartite_layout(G, users, align='horizontal')  # Alternative method
+
+    # Draw the graph
+    nx.draw(G, pos, with_labels=True, 
+            node_color=['skyblue' if node in users else 'lightgreen' for node in G.nodes()],
+            node_size=500, font_size=8, font_color='black', edge_color='gray', width=0.5)
+
+    # Highlight the largest cliques
+    for page, users_in_clique in largest_cliques:
+        if len(users_in_clique) > 0:
+            # Highlight the users in the current clique
+            nx.draw_networkx_nodes(G, pos, nodelist=users_in_clique, node_color='orange', node_size=700)
+            # Label the page in red
+            plt.text(pos[page][0], pos[page][1], page, fontsize=12, color='red', fontweight='bold')
+
+    plt.title('Bipartite Graph with Largest 10 Cliques Highlighted')
+    plt.show()
 
 """
 Find bridges, save corresponding nodes to file and return subgraph [sG].
