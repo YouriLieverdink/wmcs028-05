@@ -5,6 +5,8 @@ import pandas as pd
 import csv
 import random
 from collections import Counter
+from lib.utilities import convert_to_csv
+from datetime import datetime
 
 """
 The number of nodes in the graph.
@@ -331,3 +333,78 @@ def betweenness_centrality(G: nx.Graph, output_path: str) -> None:
 
     top_df.to_csv(f"{output_path}/user_betweenness_centrality.csv", index=False)
     bottom_df.to_csv(f"{output_path}/page_betweenness_centrality.csv", index=False)
+
+def degree_centrality_range(G: nx.Graph, start: float, end: float) -> None:
+    # Create a subgraph of the original graph, only containing the edges within the range.
+    edges = [(u, v, data) for u, v, data in G.edges(data=True) if start < float(data['timestamp']) <= end]
+    sG = nx.Graph()
+    sG.add_edges_from(edges)
+
+    print('[INFO]: Subgraph created.')
+    
+    # Divide the graph into two sets: users and pages.
+    users = {n for n in sG.nodes() if n.startswith('u')}
+    
+    # Calculate the degree centrality of the users, and sort them.
+    users_degree = nx.bipartite.degree_centrality(sG, users)
+    sorted_users_degree = sorted(users_degree.items(), key=lambda x: x[1], reverse=True)
+
+    with open('./results/degree_centrality.csv', mode='w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(['User', 'Degree Centrality'])
+        for user, centrality in sorted_users_degree:
+            writer.writerow([user, centrality])
+        
+        file.close()
+    
+    print('[INFO]: Degree centrality calculated for users.')
+
+def betweenness_centrality_range(G: nx.Graph, start: float, end: float) -> None:
+    # Create a subgraph of the original graph, only containing the edges within the range.
+    edges = [(u, v, data) for u, v, data in G.edges(data=True) if start < float(data['timestamp']) <= end]
+    sG = nx.Graph()
+    sG.add_edges_from(edges)
+
+    print('[INFO]: Subgraph created.')
+    
+    # Divide the graph into two sets: users and pages.
+    users = {n for n in sG.nodes() if n.startswith('u')}
+    
+    # Calculate the betweenness centrality of the users, and sort them.
+    users_betweenness = nx.bipartite.betweenness_centrality(sG, users)
+    sorted_users_betweenness = sorted(users_betweenness.items(), key=lambda x: x[1], reverse=True)
+
+    with open('./results/betweenness_centrality.csv', mode='w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(['User', 'Betweenness Centrality'])
+        for user, centrality in sorted_users_betweenness:
+            writer.writerow([user, centrality])
+        
+        file.close()
+    
+    print('[INFO]: Betweenness centrality calculated for users.')
+    
+def closeness_centrality_range(G: nx.Graph, start: float, end: float) -> None:
+    # Create a subgraph of the original graph, only containing the edges within the range.
+    edges = [(u, v, data) for u, v, data in G.edges(data=True) if start < float(data['timestamp']) <= end]
+    sG = nx.Graph()
+    sG.add_edges_from(edges)
+
+    print('[INFO]: Subgraph created.')
+    
+    # Divide the graph into two sets: users and pages.
+    users = {n for n in sG.nodes() if n.startswith('u')}
+    
+    # Calculate the closeness centrality of the users, and sort them.
+    users_closeness = nx.bipartite.closeness_centrality(sG, users)
+    sorted_users_closeness = sorted(users_closeness.items(), key=lambda x: x[1], reverse=True)
+
+    with open('./results/closeness_centrality.csv', mode='w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(['User', 'Closeness Centrality'])
+        for user, centrality in sorted_users_closeness:
+            writer.writerow([user, centrality])
+        
+        file.close()
+    
+    print('[INFO]: Closeness centrality calculated for users.')
