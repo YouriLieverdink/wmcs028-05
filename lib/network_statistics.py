@@ -125,22 +125,29 @@ def degree_distribution(G: nx.Graph) -> None:
     plt.show()
 
 """
-Create plot to display the different clusters.
-"""
-def clusters(G: nx.Graph) -> None:
-    pass
-
-"""
 Compute the average clustering coefficient of the network.
 """
 def avg_clustering_coefficient(G: nx.Graph) -> float:
-    return nx.bipartite.average_clustering(G)
+    print(f"[RESULT] Avg clustering coefficient = {nx.average_clustering(G)}")
+    return nx.average_clustering(G)
 
 """
-Compute the clustering coefficient of all individual nodes.
+Compute the clustering coefficient of all individual nodes and save top 20.
 """
-def clustering_coefficient(G: nx.Graph) -> float:
-    return nx.bipartite.clustering(G)
+def clustering_coefficient(G: nx.Graph, output_path: str):
+    clustering_coeffs = nx.clustering(G)
+
+    # sort and take the top 20
+    top_clustering = sorted(clustering_coeffs.items(), key=lambda x: x[1], reverse=True)[:20]
+
+    # create CSV
+    with open(output_path, 'w', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(['Node', 'Clustering Coefficient'])
+        writer.writerows(top_clustering)
+
+    print(f"[RESULT] Top 20 nodes with highest clustering coefficients saved to {output_path}")
+
 
 """
 Determine the number of connected components of graph [G], and return a
@@ -251,7 +258,7 @@ def plot_degree_centrality(page_csv: str, user_csv: str) -> None:
     plt.xticks(rotation=90)
     plt.xlabel('Page Nodes')
     plt.ylabel('Degree Centrality')
-    plt.title('Top 10 Degree Centrality of Pages')
+    plt.title('Top 20 Degree Centrality of Pages')
 
     # plot top user centrality degrees
     plt.subplot(1, 2, 2)
@@ -259,7 +266,7 @@ def plot_degree_centrality(page_csv: str, user_csv: str) -> None:
     plt.xticks(rotation=90)
     plt.xlabel('User Nodes')
     plt.ylabel('Degree Centrality')
-    plt.title('Top 10 Degree Centrality of Users')
+    plt.title('Top 20 Degree Centrality of Users')
 
     # show and save
     plt.tight_layout()
@@ -339,10 +346,10 @@ def degree_centrality_range(G: nx.Graph, start: float, end: float) -> None:
     sG.add_edges_from(edges)
 
     print('[INFO]: Subgraph created.')
-    
+
     # Divide the graph into two sets: users and pages.
     users = {n for n in sG.nodes() if n.startswith('u')}
-    
+
     # Calculate the degree centrality of the users, and sort them.
     users_degree = nx.bipartite.degree_centrality(sG, users)
     sorted_users_degree = sorted(users_degree.items(), key=lambda x: x[1], reverse=True)
@@ -352,9 +359,9 @@ def degree_centrality_range(G: nx.Graph, start: float, end: float) -> None:
         writer.writerow(['User', 'Degree Centrality'])
         for user, centrality in sorted_users_degree:
             writer.writerow([user, centrality])
-        
+
         file.close()
-    
+
     print('[INFO]: Degree centrality calculated for users.')
 
 def betweenness_centrality_range(G: nx.Graph, start: float, end: float) -> None:
@@ -364,10 +371,10 @@ def betweenness_centrality_range(G: nx.Graph, start: float, end: float) -> None:
     sG.add_edges_from(edges)
 
     print('[INFO]: Subgraph created.')
-    
+
     # Divide the graph into two sets: users and pages.
     users = {n for n in sG.nodes() if n.startswith('u')}
-    
+
     # Calculate the betweenness centrality of the users, and sort them.
     users_betweenness = nx.bipartite.betweenness_centrality(sG, users)
     sorted_users_betweenness = sorted(users_betweenness.items(), key=lambda x: x[1], reverse=True)
@@ -377,11 +384,11 @@ def betweenness_centrality_range(G: nx.Graph, start: float, end: float) -> None:
         writer.writerow(['User', 'Betweenness Centrality'])
         for user, centrality in sorted_users_betweenness:
             writer.writerow([user, centrality])
-        
+
         file.close()
-    
+
     print('[INFO]: Betweenness centrality calculated for users.')
-    
+
 def closeness_centrality_range(G: nx.Graph, start: float, end: float) -> None:
     # Create a subgraph of the original graph, only containing the edges within the range.
     edges = [(u, v, data) for u, v, data in G.edges(data=True) if start < float(data['timestamp']) <= end]
@@ -389,20 +396,25 @@ def closeness_centrality_range(G: nx.Graph, start: float, end: float) -> None:
     sG.add_edges_from(edges)
 
     print('[INFO]: Subgraph created.')
-    
-    # Divide the graph into two sets: users and pages.
+
+    # Identify users in the bipartite graph (assuming user nodes start with 'u')
     users = {n for n in sG.nodes() if n.startswith('u')}
-    
-    # Calculate the closeness centrality of the users, and sort them.
+
+    # Calculate the closeness centrality of the users.
     users_closeness = nx.bipartite.closeness_centrality(sG, users)
+
+    # Check the maximum value of closeness centrality
+    max_centrality = max(users_closeness.values())
+    print(f"[INFO]: Max closeness centrality value: {max_centrality}")
+
+    # Sort the users by their closeness centrality scores.
     sorted_users_closeness = sorted(users_closeness.items(), key=lambda x: x[1], reverse=True)
 
+    # Write the results to a CSV file
     with open('./results/closeness_centrality.csv', mode='w', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(['User', 'Closeness Centrality'])
         for user, centrality in sorted_users_closeness:
             writer.writerow([user, centrality])
-        
-        file.close()
-    
+
     print('[INFO]: Closeness centrality calculated for users.')

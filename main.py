@@ -15,5 +15,7 @@ def main():
     n = G.number_of_nodes()
     print(f'n: {n}')
 
+    
+
 if __name__ == '__main__':
     main()

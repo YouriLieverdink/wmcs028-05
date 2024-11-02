@@ -52,7 +52,6 @@ def cliques(G: nx.Graph) -> nx.Graph:
 
     plt.title("Metagraph of Sampled Cliques")
     plt.savefig("metagraph_cliques.png")
-    # plt.show()
 
 
     return largest_cliques
@@ -69,32 +68,45 @@ def cliques_2o(G: nx.Graph) -> None:
     for page in tqdm(pages):
         # Get all users that edited this page
         users_for_page = list(G.neighbors(page))
-        
+
         if len(users_for_page) > 1:  # At least two users are needed to form a clique
             cliques[page] = users_for_page
 
     largest_cliques = sorted(cliques.items(), key=lambda item: len(item[1]), reverse=True)[:10]
 
-    # Plotting the bipartite graph
-    plt.figure(figsize=(12, 8))
-    
-    pos = nx.bipartite_layout(G, users, align='horizontal')  # Alternative method
+    print(f"[RESULT] Number of max_cliques = {len(cliques)}")
 
-    # Draw the graph
-    nx.draw(G, pos, with_labels=True, 
-            node_color=['skyblue' if node in users else 'lightgreen' for node in G.nodes()],
-            node_size=500, font_size=8, font_color='black', edge_color='gray', width=0.5)
+    largest_max_clique = max(len(users) for users in cliques.values())
+    print(f"[RESULT] Largest maximal clique has size {largest_max_clique}")
 
-    # Highlight the largest cliques
-    for page, users_in_clique in largest_cliques:
-        if len(users_in_clique) > 0:
-            # Highlight the users in the current clique
-            nx.draw_networkx_nodes(G, pos, nodelist=users_in_clique, node_color='orange', node_size=700)
-            # Label the page in red
-            plt.text(pos[page][0], pos[page][1], page, fontsize=12, color='red', fontweight='bold')
+    return largest_cliques
 
-    plt.title('Bipartite Graph with Largest 10 Cliques Highlighted')
-    plt.show()
+"""
+Create a CSV file with the edges of the  two largest cliques
+"""
+def two_pages_cliques(G: nx.Graph, output_path: str) -> None:
+    largest_cliques = cliques_2o(G)
+
+    # get the two largest cliques
+    page_1, users_1 = largest_cliques[0]
+    page_2, users_2 = largest_cliques[1]
+
+    edges = []
+
+    # collect the edges
+    for user in users_1:
+        edges.append((user, page_1))
+    for user in users_2:
+        edges.append((user, page_2))
+
+    # save to CSV
+    with open(output_path, 'w', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(['Source', 'Target'])
+        writer.writerows(edges)
+
+    print(f"[RESULT] Edges saved to {output_path} for pages: {page_1}, {page_2} with {len(users_1) + len(users_2)} total user nodes.")
+
 
 """
 Find bridges, save corresponding nodes to file and return subgraph [sG].
@@ -130,49 +142,24 @@ def bridges(G: nx.Graph, output_path: str) -> nx.Graph:
 Apply Girvan-Newman algorithm.
 """
 def partitioning(G: nx.Graph, output_path: str) -> None:
-    pass
-#     # G needs to be a projection
-#     k = 10
-#     components = nx.community.girvan_newman(G)
-#
-#     community_list = []
-#
-#     for i, communities in enumerate(itertools.islice(components, k)):
-#         sorted_communities = sorted(tuple(sorted(c)) for c in communities)
-#         community_list.append(sorted_communities)
-#         print(f"Community {i+1}: {sorted_communities}")
-#
-#     # flatten the community list to save it to CSV file
-#     flat_communities = []
-#     for i, community in enumerate(community_list):
-#         for c in community:
-#             flat_communities.append({"Community": f"Community {i+1}", "Nodes": ', '.join(map(str, c))})
-#
-#     # Use pandas to save to CSV
-#     df = pd.DataFrame(flat_communities)
-#     df.to_csv(output_csv, index=False)
-#     print(f"Communities saved to {output_csv}")
-#
-#     # visualization
-#     plt.figure(figsize=(12, 8))
-#     pos = nx.spring_layout(G, seed=42)
-#     color_map = plt.cm.get_cmap('tab10', k)
-#
-#     # a different color for each community
-#     for i, communities in enumerate(community_list):
-#         for community in communities:
-#             nx.draw_networkx_nodes(G, pos, nodelist=community, node_color=color_map(i), label=f'Community {i+1}', node_size=100)
-#
-#     nx.draw_networkx_edges(G, pos, alpha=0.5)
-#
-#     # labels/titles
-#     plt.title("Girvan-Newman Community Detection")
-#     plt.legend()
-#     plt.savefig("girvan_newman_communities.png")
-#     plt.show()
-#
-# # Example usage
-# # G = nx.erdos_renyi_graph(100, 0.05)  # Example graph
-# # partitioning(G)
-#
-#     return
+    # G needs to be a projection
+    k = 10
+    components = nx.community.girvan_newman(G)
+
+    community_list = []
+
+    for i, communities in enumerate(itertools.islice(components, k)):
+        sorted_communities = sorted(tuple(sorted(c)) for c in communities)
+        community_list.append(sorted_communities)
+        print(f"Community {i+1}: {sorted_communities}")
+
+    # flatten the community list to save it to CSV file
+    flat_communities = []
+    for i, community in enumerate(community_list):
+        for c in community:
+            flat_communities.append({"Community": f"Community {i+1}", "Nodes": ', '.join(map(str, c))})
+
+    # create CSV
+    df = pd.DataFrame(flat_communities)
+    df.to_csv(output_csv, index=False)
+    print(f"Communities saved to {output_csv}")
